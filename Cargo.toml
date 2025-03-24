@@ -32,6 +32,8 @@ pretty_env_logger = "0.5.0"
 regex = "1.11.1"
 tracing = "0.1.41"
 bitflags = { version = "2.5", features = ["serde"] }
+fern = "0.7.1"
+disk_log = "=1.0.0"
 
 
 

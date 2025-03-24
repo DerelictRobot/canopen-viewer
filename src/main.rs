@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::thread;
 use tokio::runtime::Runtime;
 use tokio::sync::{watch, Mutex};
+use disk_log::DiskLog; // Import disk_log
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -20,7 +21,6 @@ struct Args {
 fn main() -> eframe::Result<()> {
     pretty_env_logger::init();
     let args = Args::parse();
-
     let initial_control = Control {
         command: driver::ControlCommand::Process,
         connection: Connection {
@@ -37,11 +37,19 @@ fn main() -> eframe::Result<()> {
     let ctrl_snd_thr = ctrl_snd.clone();
     let rt = Runtime::new().expect("Unable to create Runtime");
 
+    // Initialize DiskLog
+    let path = ".";
+    let name = "service";
+    let total_page_size = 1000;
+    let log_session = DiskLog::open(path, name, total_page_size)
+        .unwrap()
+        .run_service();
+
     let _enter = rt.enter();
 
     thread::spawn(move || {
         rt.block_on(async {
-            let drv = driver::Driver::new(state_snd, ctrl_rcv);
+            let drv = driver::Driver::new(state_snd, ctrl_rcv); 
             let br = bitrate::Bitrate::new(drv.co.info.clone(), bitrates_thr.clone());
             drv.start_thread();
             br.start_thread();

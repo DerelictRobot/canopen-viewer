@@ -5,6 +5,7 @@ use oze_canopen::{
 };
 use std::{collections::VecDeque, time::Duration};
 use tokio::{signal::ctrl_c, sync::watch, task::JoinHandle, time::sleep};
+use disk_log::DiskLog; // Import disk_log
 
 /// Enum representing different control commands that can be sent to the driver.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,6 +41,7 @@ pub struct Driver {
     control: Control,
     index: u64,
     handles: JoinHandles,
+    log_session: disk_log::Session, // Add log session
 }
 
 const MAX_MESSAGES_IN_STATE: usize = 2048;
@@ -49,6 +51,14 @@ impl Driver {
         // Initialize the CANopen interface with the initial connection details.
         let initial_connection = receiver.borrow().connection.clone();
         let (co, handles) = canopen::start(initial_connection.can_name, initial_connection.bitrate);
+
+        // Initialize DiskLog
+        let path = ".";
+        let name = "service";
+        let total_page_size = 1000;
+        let log_session = DiskLog::open(path, name, total_page_size)
+            .unwrap()
+            .run_service();
 
         // Create the driver and start running it.
         let control = receiver.borrow().clone();
@@ -60,6 +70,7 @@ impl Driver {
             index: 0,
             state: State::default(),
             handles,
+            log_session, // Initialize log session
         }
     }
 
@@ -106,6 +117,11 @@ impl Driver {
         // Parse and cache the received message.
         let d = MessageCached::new(self.index, d);
         self.index += 1;
+
+
+
+        // Log the received message to disk
+        let _ = self.log_session.log(format!("{:?}", d).as_bytes().to_vec()).await;
 
         // Add the new message to the state, ensuring the state does not exceed the max size.
         while self.state.data.len() > MAX_MESSAGES_IN_STATE {
