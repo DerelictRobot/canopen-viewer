@@ -37,13 +37,6 @@ fn main() -> eframe::Result<()> {
     let ctrl_snd_thr = ctrl_snd.clone();
     let rt = Runtime::new().expect("Unable to create Runtime");
 
-    // Initialize DiskLog
-    let path = ".";
-    let name = "service";
-    let total_page_size = 1000;
-    let log_session = DiskLog::open(path, name, total_page_size)
-        .unwrap()
-        .run_service();
 
     let _enter = rt.enter();
 

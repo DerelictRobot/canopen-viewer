@@ -10,6 +10,7 @@ use oze_canopen::{
 };
 use std::io::Cursor;
 use tokio::time::Instant;
+use disk_log::DiskLog; // Import disk_log
 
 #[derive(Debug, Clone)]
 pub enum RxMessageAdditional {
@@ -33,6 +34,10 @@ pub struct MessageCached {
 
 impl RxMessageAdditional {
     fn from_server_resp_data(d: &ResponseData) -> String {
+        let log_session = DiskLog::open(".", "logservice", 1000).unwrap().run_service(); // Initialize DiskLog
+        let log_data = format!("{:?}", d);
+        let _ = log_session.log(log_data.as_bytes().to_vec()); // Log data
+
         match d {
             ResponseData::Download(i) => {
                 format!(
@@ -64,6 +69,9 @@ impl RxMessageAdditional {
     }
 
     fn from_req_data(sdo_request: &SdoRequestData) -> String {
+        let log_session = DiskLog::open(".", "logservice", 1000).unwrap().run_service(); // Initialize DiskLog
+        let log_data = format!("{:?}", sdo_request);
+        let _ = log_session.log(log_data.as_bytes().to_vec());
         match sdo_request {
             SdoRequestData::InitiateDownload(req_initial) => {
                 format!(
@@ -93,6 +101,7 @@ impl RxMessageAdditional {
     }
 
     pub fn get_tooltip(&self) -> String {
+
         match &self {
             RxMessageAdditional::SdoRx(server_request) => server_request
                 .cmd
