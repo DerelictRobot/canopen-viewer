@@ -42,7 +42,7 @@ pub struct Driver {
     handles: JoinHandles,
 }
 
-const MAX_MESSAGES_IN_STATE: usize = 512;
+const MAX_MESSAGES_IN_STATE: usize = 2048;
 
 impl Driver {
     pub fn new(sender: watch::Sender<State>, receiver: watch::Receiver<Control>) -> Self {
